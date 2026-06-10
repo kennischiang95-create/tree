@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tree Adventure：BST Master 改良版</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Microsoft JhengHei", Arial, sans-serif;
+      background: linear-gradient(135deg, #eef2ff, #f8fafc);
+      color: #1f2937;
+    }
+    .container { max-width: 1180px; margin: 0 auto; padding: 24px 18px 40px; }
+    h1 { text-align: center; margin: 10px 0 6px; font-size: 36px; }
+    .subtitle { text-align: center; color: #475569; margin-bottom: 18px; font-size: 17px; }
+    .topbar {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .stat {
+      background: white;
+      border-radius: 14px;
+      padding: 12px;
+      text-align: center;
+      box-shadow: 0 8px 18px rgba(15,23,42,.08);
+      font-weight: bold;
+    }
+    .layout { display: grid; grid-template-columns: 1.05fr .95fr; gap: 18px; }
+    .panel {
+      background: white;
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 8px 22px rgba(15,23,42,.08);
+    }
+    .mission {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 14px 16px;
+      line-height: 1.8;
+      font-size: 18px;
+      margin-bottom: 14px;
+    }
+    .current-node {
+      text-align: center;
+      padding: 18px;
+      background: #eff6ff;
+      border: 2px solid #93c5fd;
+      border-radius: 18px;
+      margin-bottom: 14px;
+    }
+    .node-value { font-size: 54px; font-weight: 900; color: #1d4ed8; }
+    .choices { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 14px 0; }
+    button {
+      border: none;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-size: 16px;
+      cursor: pointer;
+      font-weight: bold;
+      color: white;
+      background: #2563eb;
+    }
+    button:hover { filter: brightness(.94); }
+    button.secondary { background: #64748b; }
+    button.warn { background: #d97706; }
+    button.danger { background: #dc2626; }
+    button.success { background: #059669; }
+    button:disabled { background: #cbd5e1; cursor: not-allowed; color: #64748b; }
+    .fog {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .fog-card {
+      border: 2px dashed #cbd5e1;
+      background: #f8fafc;
+      border-radius: 14px;
+      text-align: center;
+      padding: 14px;
+      color: #64748b;
+      font-weight: bold;
+    }
+    .tree-box {
+      min-height: 360px;
+      overflow-x: auto;
+      padding: 14px;
+      background: #f8fafc;
+      border-radius: 14px;
+      border: 1px solid #e2e8f0;
+    }
+    .tree-level { display: flex; justify-content: center; gap: 18px; margin: 14px 0; min-width: 520px; }
+    .tree-node {
+      min-width: 54px;
+      min-height: 54px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      border: 3px solid #94a3b8;
+      background: #e2e8f0;
+      color: #334155;
+    }
+    .tree-node.hidden { background: #cbd5e1; color: #64748b; border-style: dashed; }
+    .tree-node.visited { background: #bfdbfe; border-color: #2563eb; color: #1e3a8a; }
+    .tree-node.current { background: #fde68a; border-color: #f59e0b; color: #92400e; }
+    .tree-node.found { background: #bbf7d0; border-color: #059669; color: #065f46; }
+    .path {
+      margin-top: 12px;
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 12px;
+      border: 1px solid #e2e8f0;
+      line-height: 1.7;
+    }
+    .feedback {
+      min-height: 64px;
+      padding: 14px;
+      border-radius: 14px;
+      background: #f8fafc;
+      border-left: 6px solid #60a5fa;
+      line-height: 1.7;
+      font-size: 17px;
+      margin-top: 12px;
+    }
+    .feedback.good { border-left-color: #10b981; background: #ecfdf5; }
+    .feedback.bad { border-left-color: #ef4444; background: #fef2f2; }
+    .feedback.finish { border-left-color: #f59e0b; background: #fffbeb; }
+    .log-list { max-height: 260px; overflow-y: auto; padding-left: 0; list-style: none; margin: 0; }
+    .log-list li { margin-bottom: 9px; background: #f8fafc; padding: 10px 12px; border-radius: 10px; border-left: 4px solid #93c5fd; line-height: 1.6; }
+    .lesson { line-height: 1.8; color: #334155; }
+    .lesson strong { color: #1d4ed8; }
+    .start-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(15, 23, 42, .78);
+      backdrop-filter: blur(6px);
+    }
+    .start-card {
+      width: min(520px, 100%);
+      background: white;
+      border-radius: 22px;
+      padding: 26px 22px;
+      text-align: center;
+      box-shadow: 0 24px 60px rgba(0,0,0,.3);
+    }
+    .start-card h2 { margin-top: 0; font-size: 30px; }
+    .start-card p { line-height: 1.8; color: #475569; }
+    .start-card button {
+      width: 100%;
+      min-height: 56px;
+      margin-top: 10px;
+      font-size: 20px;
+    }
+    .hidden-ui { display: none !important; }
+    .next-row { display: none; margin-top: 12px; }
+    .next-row.show { display: flex; justify-content: center; }
+    .next-row button { min-width: 180px; }
+
+    @media (max-width: 900px) {
+      body { padding-bottom: 126px; }
+      .container { padding: 14px 10px 24px; }
+      .layout { grid-template-columns: 1fr; gap: 12px; }
+      .topbar {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 7px;
+      }
+      .topbar .stat:last-child { grid-column: 1 / -1; }
+      .stat { padding: 9px 6px; font-size: 14px; }
+      h1 { font-size: 25px; line-height: 1.25; }
+      .subtitle { font-size: 14px; margin-bottom: 12px; }
+      .panel { padding: 13px; border-radius: 14px; }
+      .mission { font-size: 16px; padding: 12px; }
+      .current-node { padding: 12px; }
+      .node-value { font-size: 46px; }
+      .fog { gap: 8px; }
+      .fog-card { padding: 10px 6px; font-size: 14px; }
+      .choices {
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        margin: 0;
+        padding: 8px 10px max(8px, env(safe-area-inset-bottom));
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        background: rgba(255,255,255,.97);
+        box-shadow: 0 -8px 24px rgba(15,23,42,.14);
+      }
+      .choices button {
+        width: 100%;
+        min-height: 48px;
+        padding: 9px 8px;
+        font-size: 15px;
+      }
+      .choices .wide-mobile { grid-column: 1 / -1; }
+      .tree-box {
+        min-height: 250px;
+        padding: 8px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .tree-level { min-width: 420px; gap: 10px; margin: 10px 0; }
+      .tree-node { min-width: 46px; min-height: 46px; }
+      .feedback { font-size: 15px; min-height: 56px; }
+      .path { font-size: 15px; }
+      .start-card h2 { font-size: 25px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="start-overlay" id="startOverlay">
+    <div class="start-card">
+      <h2>🌳 BST 搜尋挑戰</h2>
+      <p>
+        每一關都要依照「左小右大」判斷方向。<br>
+        未走過的節點會被迷霧隱藏，不能直接看答案。<br>
+        走錯會扣 HP，但可以回退後重新判斷。
+      </p>
+      <button class="success" onclick="startGame()">開始遊戲</button>
+    </div>
+  </div>
+
+  <div class="container hidden-ui" id="gameContainer">
+    <h1>🌳 Tree Adventure：BST Master 改良版</h1>
+    <div class="subtitle">戰爭迷霧 + 可回退 + 錯誤提示 + 搜尋路徑，讓玩家靠 BST 規則判斷，而不是看答案走路。</div>
+
+    <div class="topbar">
+      <div class="stat">關卡：<span id="levelText">1</span>/5</div>
+      <div class="stat">❤️ HP：<span id="hpText">100</span></div>
+      <div class="stat">🪙 金幣：<span id="coinText">0</span></div>
+      <div class="stat">⭐ 分數：<span id="scoreText">0</span></div>
+      <div class="stat">進度：<span id="progressText">0/0</span></div>
+    </div>
+
+    <div class="layout">
+      <div class="panel">
+        <div class="mission" id="missionBox"></div>
+
+        <div class="current-node">
+          <div>目前所在節點</div>
+          <div class="node-value" id="currentNodeText">?</div>
+          <div id="ruleHint">請根據目標值判斷要往左或往右。</div>
+        </div>
+
+        <div class="fog">
+          <div class="fog-card">左子樹：隱藏<br>規則：比目前節點小</div>
+          <div class="fog-card">右子樹：隱藏<br>規則：比目前節點大</div>
+        </div>
+
+        <div class="choices">
+          <button onclick="move('left')">⬅ 往左</button>
+          <button onclick="move('right')">往右 ➡</button>
+          <button class="warn" onclick="goBack()" id="backBtn">↩ 回退一步</button>
+          <button class="secondary" onclick="showHint()">💡 提示</button>
+          <button class="danger wide-mobile" onclick="restartLevel()">重新本關</button>
+        </div>
+
+        <div class="next-row" id="nextRow">
+          <button class="success" onclick="nextLevel()" id="nextBtn">進入下一關</button>
+        </div>
+
+        <div id="feedback" class="feedback">歡迎進入 BST 搜尋挑戰。請不要靠看完整樹形，而是用「左小右大」判斷路徑。</div>
+
+        <div class="path">
+          <strong>搜尋路徑：</strong><span id="pathText">尚未開始</span><br>
+          <strong>比較次數：</strong><span id="compareText">0</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="panel" style="margin-bottom:18px;">
+          <h2>🌫️ 迷霧樹視覺化</h2>
+          <div class="tree-box" id="treeBox"></div>
+          <p class="lesson">只顯示你已走過的節點與目前節點，避免直接看到答案路徑。</p>
+        </div>
+
+        <div class="panel">
+          <h2>📘 教學紀錄</h2>
+          <ul id="logList" class="log-list"></ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:18px;">
+      <h2>📌 本遊戲學習重點</h2>
+      <div class="lesson">
+        <strong>BST（二元搜尋樹）規則：</strong>左子樹的值小於目前節點，右子樹的值大於目前節點。<br>
+        <strong>搜尋方式：</strong>每到一個節點，就把目標值和目前節點比較；較小往左，較大往右，相等則找到。<br>
+        <strong>時間複雜度：</strong>平衡時平均為 O(log n)，但若樹退化成鏈結串列，最差會變成 O(n)。
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const levels = [
+      {
+        name: "第一關：理解左小右大",
+        target: 20,
+        tree: { value: 50, left: { value: 30, left: { value: 20 }, right: { value: 40 } }, right: { value: 70, left: { value: 60 }, right: { value: 80 } } },
+        goal: "請找到 20。這關只要練習：目標比目前節點小，就往左。"
+      },
+      {
+        name: "第二關：連續判斷路徑",
+        target: 65,
+        tree: { value: 50, left: { value: 25, left: { value: 10 }, right: { value: 35 } }, right: { value: 75, left: { value: 60, right: { value: 65 } }, right: { value: 90 } } },
+        goal: "請找到 65。這關需要連續比較多次。"
+      },
+      {
+        name: "第三關：避免看答案，靠規則判斷",
+        target: 42,
+        tree: { value: 40, left: { value: 20, left: { value: 10 }, right: { value: 30 } }, right: { value: 60, left: { value: 50, left: { value: 42 } }, right: { value: 80 } } },
+        goal: "請找到 42。每一步都要說服自己：為什麼往左或往右。"
+      },
+      {
+        name: "第四關：搜尋失敗也能學到東西",
+        target: 55,
+        tree: { value: 45, left: { value: 25, left: { value: 15 }, right: { value: 35 } }, right: { value: 70, left: { value: 60, left: { value: 52 } }, right: { value: 88 } } },
+        goal: "請搜尋 55。這個值不一定存在，重點是找到它應該出現的位置。"
+      },
+      {
+        name: "第五關：挑戰較深的 BST",
+        target: 73,
+        tree: { value: 64, left: { value: 32, left: { value: 16 }, right: { value: 48 } }, right: { value: 96, left: { value: 80, left: { value: 72, right: { value: 73 } }, right: { value: 88 } }, right: { value: 112 } } },
+        goal: "請找到 73。觀察搜尋路徑長度，理解 BST 的效率。"
+      }
+    ];
+
+    let levelIndex = 0;
+    let current = null;
+    let path = [];
+    let visited = new Set();
+    let hp = 100;
+    let coins = 0;
+    let score = 0;
+    let finished = false;
+    let gameStarted = false;
+
+    function nodeId(node) { return String(node.value); }
+    function currentLevel() { return levels[levelIndex]; }
+
+    function startGame() {
+      gameStarted = true;
+      document.getElementById("startOverlay").style.display = "none";
+      document.getElementById("gameContainer").classList.remove("hidden-ui");
+      initLevel(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function initLevel(resetHp = false) {
+      const lv = currentLevel();
+      current = lv.tree;
+      path = [current];
+      visited = new Set([nodeId(current)]);
+      finished = false;
+      document.getElementById("nextRow").classList.remove("show");
+      if (resetHp) hp = 100;
+      document.getElementById("missionBox").innerHTML = `<strong>${lv.name}</strong><br>🎯 目標值：<strong>${lv.target}</strong><br>${lv.goal}`;
+      document.getElementById("logList").innerHTML = "";
+      addLog(`開始關卡：目標是 <strong>${lv.target}</strong>，目前在根節點 <strong>${current.value}</strong>。`);
+      setFeedback("請比較目標值和目前節點，再決定往左或往右。", "");
+      render();
+    }
+
+    function move(direction) {
+      if (finished) return;
+      const target = currentLevel().target;
+      const correctDirection = target < current.value ? "left" : target > current.value ? "right" : "found";
+
+      if (correctDirection === "found") {
+        completeLevel(true);
+        return;
+      }
+
+      if (direction !== correctDirection) {
+        hp = Math.max(0, hp - 10);
+        setFeedback(`走錯了：${target} ${target < current.value ? "小於" : "大於"} ${current.value}，所以應該往${correctDirection === "left" ? "左" : "右"}。你可以按「回退一步」重新判斷。`, "bad");
+        addLog(`❌ 在 ${current.value} 選擇往${direction === "left" ? "左" : "右"}，但根據 BST 規則應該往${correctDirection === "left" ? "左" : "右"}。HP -10。`);
+        if (hp <= 0) {
+          finished = true;
+          setFeedback("💔 HP 已歸零，請按「重新本關」再試一次。", "bad");
+        }
+        render();
+        return;
+      }
+
+      const next = current[direction];
+      if (!next) {
+        finished = true;
+        setFeedback(`搜尋結束：${target} 應該出現在 ${current.value} 的${direction === "left" ? "左" : "右"}邊，但該位置是空的，所以樹中沒有這個值。`, "finish");
+        addLog(`🔎 走到空節點，表示目標值不存在，但我們找到了它應該插入的位置。`);
+        score += 15;
+        coins += 5;
+        render();
+        return;
+      }
+
+      current = next;
+      path.push(current);
+      visited.add(nodeId(current));
+      addLog(`✅ ${target} ${target < path[path.length-2].value ? "小於" : "大於"} ${path[path.length-2].value}，所以往${direction === "left" ? "左" : "右"}，到達 ${current.value}。`);
+
+      if (current.value === target) {
+        completeLevel(true);
+      } else {
+        setFeedback(`目前到達 ${current.value}。請繼續比較：${target} 和 ${current.value} 的大小。`, "good");
+      }
+      render();
+    }
+
+    function goBack() {
+      if (finished) return;
+      if (path.length <= 1) {
+        setFeedback("已經在根節點，不能再回退。", "bad");
+        return;
+      }
+      const removed = path.pop();
+      current = path[path.length - 1];
+      visited.delete(nodeId(removed));
+      setFeedback(`已回退到 ${current.value}。重新用 BST 規則判斷方向。`, "finish");
+      addLog(`↩ 回退一步：從 ${removed.value} 回到 ${current.value}。`);
+      render();
+    }
+
+    function showHint() {
+      if (finished) return;
+      const target = currentLevel().target;
+      if (target === current.value) {
+        setFeedback(`目標值就是目前節點 ${current.value}，已經找到了。`, "good");
+      } else if (target < current.value) {
+        setFeedback(`${target} 小於 ${current.value}，依照 BST 左小右大的規則，下一步應該往左。`, "finish");
+      } else {
+        setFeedback(`${target} 大於 ${current.value}，依照 BST 左小右大的規則，下一步應該往右。`, "finish");
+      }
+    }
+
+    function completeLevel(found) {
+      finished = true;
+      const bonus = Math.max(10, 40 - (path.length - 1) * 3);
+      score += bonus;
+      coins += 10;
+      visited.add(nodeId(current));
+      setFeedback(`🎉 成功找到 ${currentLevel().target}！搜尋路徑是 ${path.map(n => n.value).join(" → ")}，共比較 ${path.length} 次。`, "finish");
+      addLog(`🎉 通關！本關搜尋路徑：<strong>${path.map(n => n.value).join(" → ")}</strong>。`);
+      render();
+      const nextRow = document.getElementById("nextRow");
+      const nextBtn = document.getElementById("nextBtn");
+      if (levelIndex < levels.length - 1) {
+        nextBtn.textContent = "進入下一關";
+        nextRow.classList.add("show");
+      } else {
+        nextBtn.textContent = "重新開始全部關卡";
+        nextRow.classList.add("show");
+        setFeedback(`🏆 全部關卡完成！最後分數：${score}，金幣：${coins}。`, "finish");
+      }
+    }
+
+    function nextLevel() {
+      if (levelIndex < levels.length - 1) {
+        levelIndex++;
+        initLevel(false);
+      } else {
+        levelIndex = 0;
+        hp = 100;
+        coins = 0;
+        score = 0;
+        initLevel(true);
+      }
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function restartLevel() {
+      if (hp <= 0) hp = 100;
+      initLevel(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function setFeedback(text, type) {
+      const el = document.getElementById("feedback");
+      el.textContent = text;
+      el.className = "feedback" + (type ? " " + type : "");
+    }
+
+    function addLog(html) {
+      const li = document.createElement("li");
+      li.innerHTML = html;
+      document.getElementById("logList").prepend(li);
+    }
+
+    function render() {
+      document.getElementById("levelText").textContent = levelIndex + 1;
+      document.getElementById("hpText").textContent = hp;
+      document.getElementById("coinText").textContent = coins;
+      document.getElementById("scoreText").textContent = score;
+      document.getElementById("progressText").textContent = `${path.length}/${estimateHeight(currentLevel().tree)}`;
+      document.getElementById("currentNodeText").textContent = current ? current.value : "?";
+      document.getElementById("pathText").textContent = path.map(n => n.value).join(" → ");
+      document.getElementById("compareText").textContent = path.length;
+      document.getElementById("backBtn").disabled = path.length <= 1 || finished;
+      renderTree();
+    }
+
+    function estimateHeight(node) {
+      if (!node) return 0;
+      return 1 + Math.max(estimateHeight(node.left), estimateHeight(node.right));
+    }
+
+    function collectLevels(root) {
+      const result = [];
+      const queue = [{ node: root, depth: 0 }];
+      while (queue.length) {
+        const { node, depth } = queue.shift();
+        if (!result[depth]) result[depth] = [];
+        result[depth].push(node);
+        if (node) {
+          queue.push({ node: node.left || null, depth: depth + 1 });
+          queue.push({ node: node.right || null, depth: depth + 1 });
+        }
+        if (depth >= 3) break;
+      }
+      return result;
+    }
+
+    function renderTree() {
+      const box = document.getElementById("treeBox");
+      box.innerHTML = "";
+      const levelsArr = collectLevels(currentLevel().tree);
+      levelsArr.forEach(level => {
+        const row = document.createElement("div");
+        row.className = "tree-level";
+        level.forEach(node => {
+          const div = document.createElement("div");
+          div.className = "tree-node";
+          if (!node) {
+            div.textContent = "";
+            div.style.visibility = "hidden";
+          } else if (node.value === current.value) {
+            div.textContent = node.value;
+            div.classList.add("current");
+          } else if (visited.has(nodeId(node))) {
+            div.textContent = node.value;
+            div.classList.add(node.value === currentLevel().target ? "found" : "visited");
+          } else {
+            div.textContent = "?";
+            div.classList.add("hidden");
+          }
+          row.appendChild(div);
+        });
+        box.appendChild(row);
+      });
+    }
+
+    // 等待玩家按下「開始遊戲」後再初始化。
+  </script>
+</body>
+</html>
