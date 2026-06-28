@@ -18,7 +18,7 @@
     }
 
     .container {
-      max-width: 1180px;
+      max-width: 1280px;
       margin: 0 auto;
       padding: 24px 18px 40px;
     }
@@ -54,7 +54,7 @@
 
     .layout {
       display: grid;
-      grid-template-columns: minmax(360px, 1.05fr) minmax(0, .95fr);
+      grid-template-columns: minmax(360px, .9fr) minmax(0, 1.1fr);
       gap: 18px;
       align-items: start;
     }
@@ -197,7 +197,8 @@
     .tree-box {
       min-height: 320px;
       max-height: min(520px, calc(100vh - 220px));
-      overflow: auto;
+      overflow-y: auto;
+      overflow-x: hidden;
       padding: 14px;
       background: #f8fafc;
       border-radius: 14px;
@@ -206,9 +207,17 @@
       overscroll-behavior: contain;
     }
 
-    .tree-canvas {
+    .tree-viewport {
       position: relative;
-      margin: 0 auto;
+      width: 100%;
+      min-height: 260px;
+    }
+
+    .tree-canvas {
+      position: absolute;
+      left: 0;
+      top: 0;
+      transform-origin: top left;
     }
 
     .tree-lines {
@@ -233,8 +242,8 @@
 
     .tree-node {
       position: absolute;
-      width: 56px;
-      height: 56px;
+      width: 52px;
+      height: 52px;
       border-radius: 999px;
       display: flex;
       align-items: center;
@@ -487,7 +496,8 @@
 
       .tree-box {
         max-height: 340px;
-        overflow: auto;
+        overflow-y: auto;
+        overflow-x: hidden;
       }
 
       .topbar {
@@ -568,8 +578,8 @@
       }
 
       .tree-node {
-        width: 48px;
-        height: 48px;
+        width: 46px;
+        height: 46px;
         font-size: 14px;
       }
 
@@ -693,15 +703,15 @@
       },
       {
         name: "第二關：連續判斷路徑",
-        nodeCount: 9,
+        nodeCount: 7,
         min: 5,
         max: 99,
         targetMode: "exists",
-        goal: "請找到目標值。這關會有更多節點，需要連續比較多次。"
+        goal: "請找到目標值。這關需要連續比較多次。"
       },
       {
         name: "第三關：避免背答案，靠規則判斷",
-        nodeCount: 11,
+        nodeCount: 9,
         min: 10,
         max: 120,
         targetMode: "deepExists",
@@ -709,7 +719,7 @@
       },
       {
         name: "第四關：搜尋失敗也能學到東西",
-        nodeCount: 9,
+        nodeCount: 7,
         min: 10,
         max: 100,
         targetMode: "missing",
@@ -717,7 +727,7 @@
       },
       {
         name: "第五關：挑戰較大的 BST",
-        nodeCount: 13,
+        nodeCount: 9,
         min: 1,
         max: 150,
         targetMode: "deepExists",
@@ -746,6 +756,12 @@
     window.addEventListener("DOMContentLoaded", () => {
       cacheElements();
       els.totalLevelText.textContent = levelConfigs.length;
+    });
+
+    window.addEventListener("resize", () => {
+      if (gameStarted && activeLevel) {
+        renderTree();
+      }
     });
 
     function cacheElements() {
@@ -817,8 +833,6 @@
 
       els.missionBox.innerHTML = `
         <strong>${lv.name}</strong><br>
-        🎲 本關數字：隨機產生<br>
-        🌳 節點數量：<strong>${lv.nodeCount}</strong><br>
         🎯 目標值：<strong>${lv.target}</strong><br>
         ${lv.goal}
       `;
@@ -1299,10 +1313,10 @@
     function createCompactTreeLayout(root) {
       const positions = new Map();
 
-      const nodeSize = window.innerWidth <= 900 ? 48 : 56;
-      const horizontalGap = window.innerWidth <= 900 ? 64 : 76;
-      const verticalGap = window.innerWidth <= 900 ? 78 : 88;
-      const padding = 26;
+      const nodeSize = window.innerWidth <= 900 ? 46 : 52;
+      const horizontalGap = window.innerWidth <= 900 ? 54 : 62;
+      const verticalGap = window.innerWidth <= 900 ? 74 : 82;
+      const padding = 24;
 
       let order = 0;
       let maxDepth = 0;
@@ -1327,11 +1341,7 @@
 
       inorder(root, 0);
 
-      const width = Math.max(
-        360,
-        padding * 2 + Math.max(1, order - 1) * horizontalGap + nodeSize
-      );
-
+      const width = padding * 2 + Math.max(1, order - 1) * horizontalGap + nodeSize;
       const height = padding * 2 + maxDepth * verticalGap + nodeSize;
 
       return {
@@ -1349,10 +1359,22 @@
       const layout = createCompactTreeLayout(lv.tree);
       const edges = collectEdges(lv.tree);
 
+      const availableWidth = Math.max(260, els.treeBox.clientWidth - 28);
+      const scale = Math.min(1, availableWidth / layout.width);
+      const visualWidth = layout.width * scale;
+      const visualHeight = layout.height * scale;
+      const leftOffset = Math.max(0, (availableWidth - visualWidth) / 2);
+
+      const viewport = document.createElement("div");
+      viewport.className = "tree-viewport";
+      viewport.style.height = `${visualHeight}px`;
+
       const canvas = document.createElement("div");
       canvas.className = "tree-canvas";
       canvas.style.width = `${layout.width}px`;
       canvas.style.height = `${layout.height}px`;
+      canvas.style.left = `${leftOffset}px`;
+      canvas.style.transform = `scale(${scale})`;
 
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
       svg.classList.add("tree-lines");
@@ -1419,7 +1441,8 @@
         canvas.appendChild(div);
       });
 
-      els.treeBox.appendChild(canvas);
+      viewport.appendChild(canvas);
+      els.treeBox.appendChild(viewport);
 
       shouldShakeCurrentNode = false;
     }
