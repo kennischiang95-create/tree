@@ -4,8 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tree Adventure：BST Master 改良版</title>
+
   <style>
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
@@ -45,7 +48,7 @@
       border-radius: 14px;
       padding: 12px;
       text-align: center;
-      box-shadow: 0 8px 18px rgba(15,23,42,.08);
+      box-shadow: 0 8px 18px rgba(15, 23, 42, .08);
       font-weight: bold;
     }
 
@@ -59,7 +62,7 @@
       background: white;
       border-radius: 18px;
       padding: 18px;
-      box-shadow: 0 8px 22px rgba(15,23,42,.08);
+      box-shadow: 0 8px 22px rgba(15, 23, 42, .08);
     }
 
     .mission {
@@ -110,10 +113,21 @@
       filter: brightness(.94);
     }
 
-    button.secondary { background: #64748b; }
-    button.warn { background: #d97706; }
-    button.danger { background: #dc2626; }
-    button.success { background: #059669; }
+    button.secondary {
+      background: #64748b;
+    }
+
+    button.warn {
+      background: #d97706;
+    }
+
+    button.danger {
+      background: #dc2626;
+    }
+
+    button.success {
+      background: #059669;
+    }
 
     button:disabled {
       background: #cbd5e1;
@@ -141,23 +155,42 @@
     .tree-box {
       min-height: 360px;
       overflow-x: auto;
+      overflow-y: hidden;
       padding: 14px;
       background: #f8fafc;
       border-radius: 14px;
       border: 1px solid #e2e8f0;
+      -webkit-overflow-scrolling: touch;
     }
 
-    .tree-level {
-      display: flex;
-      justify-content: center;
-      gap: 18px;
-      margin: 14px 0;
-      min-width: 520px;
+    .tree-canvas {
+      position: relative;
+      margin: 0 auto;
+    }
+
+    .tree-lines {
+      position: absolute;
+      left: 0;
+      top: 0;
+      pointer-events: none;
+      overflow: visible;
+    }
+
+    .tree-line {
+      stroke: #94a3b8;
+      stroke-width: 3;
+      stroke-linecap: round;
+    }
+
+    .tree-line.hidden-line {
+      stroke: #cbd5e1;
+      stroke-dasharray: 7 6;
     }
 
     .tree-node {
-      min-width: 54px;
-      min-height: 54px;
+      position: absolute;
+      width: 56px;
+      height: 56px;
       border-radius: 999px;
       display: flex;
       align-items: center;
@@ -166,12 +199,15 @@
       border: 3px solid #94a3b8;
       background: #e2e8f0;
       color: #334155;
+      box-shadow: 0 8px 14px rgba(15, 23, 42, .12);
+      z-index: 2;
     }
 
     .tree-node.hidden {
       background: #cbd5e1;
       color: #64748b;
       border-style: dashed;
+      box-shadow: none;
     }
 
     .tree-node.visited {
@@ -184,6 +220,7 @@
       background: #fde68a;
       border-color: #f59e0b;
       color: #92400e;
+      transform: scale(1.08);
     }
 
     .tree-node.found {
@@ -271,7 +308,7 @@
       border-radius: 22px;
       padding: 26px 22px;
       text-align: center;
-      box-shadow: 0 24px 60px rgba(0,0,0,.3);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, .3);
     }
 
     .start-card h2 {
@@ -385,8 +422,8 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 8px;
-        background: rgba(255,255,255,.97);
-        box-shadow: 0 -8px 24px rgba(15,23,42,.14);
+        background: rgba(255, 255, 255, .97);
+        box-shadow: 0 -8px 24px rgba(15, 23, 42, .14);
       }
 
       .choices button {
@@ -401,21 +438,14 @@
       }
 
       .tree-box {
-        min-height: 250px;
+        min-height: 300px;
         padding: 8px;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-      }
-
-      .tree-level {
-        min-width: 420px;
-        gap: 10px;
-        margin: 10px 0;
       }
 
       .tree-node {
-        min-width: 46px;
-        min-height: 46px;
+        width: 48px;
+        height: 48px;
+        font-size: 14px;
       }
 
       .feedback {
@@ -449,6 +479,7 @@
 
   <div class="container hidden-ui" id="gameContainer">
     <h1>🌳 Tree Adventure：BST Master 改良版</h1>
+
     <div class="subtitle">
       戰爭迷霧 + 可回退 + 錯誤提示 + 搜尋路徑，讓玩家靠 BST 規則判斷，而不是看答案走路。
     </div>
@@ -502,7 +533,7 @@
         <div class="panel" style="margin-bottom:18px;">
           <h2>🌫️ 迷霧樹視覺化</h2>
           <div class="tree-box" id="treeBox"></div>
-          <p class="lesson">只顯示你已走過的節點與目前節點，避免直接看到答案路徑。</p>
+          <p class="lesson">節點已改成線條連接，未走過的節點仍會用問號隱藏。</p>
         </div>
 
         <div class="panel">
@@ -514,6 +545,7 @@
 
     <div class="panel" style="margin-top:18px;">
       <h2>📌 本遊戲學習重點</h2>
+
       <div class="lesson">
         <strong>BST（二元搜尋樹）規則：</strong>左子樹的值小於目前節點，右子樹的值大於目前節點。<br>
         <strong>搜尋方式：</strong>每到一個節點，就把目標值和目前節點比較；較小往左，較大往右，相等則找到。<br>
@@ -697,12 +729,7 @@
 
       current = lv.tree;
       path = [current];
-
-      // 優化重點：
-      // 原本 visited 存節點 value，現在改成直接存節點物件。
-      // 這樣即使未來有重複數值，也不會判斷錯節點。
       visited = new Set([current]);
-
       finished = false;
 
       els.nextRow.classList.remove("show");
@@ -877,7 +904,6 @@
 
       score += bonus;
       coins += 10;
-
       visited.add(current);
 
       setFeedback(
@@ -976,82 +1002,152 @@
       );
     }
 
-    function collectLevels(root) {
-      const result = [];
-      const maxDepth = estimateHeight(root) - 1;
-      const queue = [
-        {
-          node: root,
-          depth: 0
-        }
-      ];
-
-      while (queue.length > 0) {
-        const { node, depth } = queue.shift();
-
-        if (depth > maxDepth) {
-          continue;
-        }
-
-        if (!result[depth]) {
-          result[depth] = [];
-        }
-
-        result[depth].push(node);
-
-        if (node) {
-          queue.push({
-            node: node.left || null,
-            depth: depth + 1
-          });
-
-          queue.push({
-            node: node.right || null,
-            depth: depth + 1
-          });
-        }
+    function collectEdges(node, edges = []) {
+      if (!node) {
+        return edges;
       }
 
-      return result;
+      if (node.left) {
+        edges.push({
+          parent: node,
+          child: node.left
+        });
+
+        collectEdges(node.left, edges);
+      }
+
+      if (node.right) {
+        edges.push({
+          parent: node,
+          child: node.right
+        });
+
+        collectEdges(node.right, edges);
+      }
+
+      return edges;
+    }
+
+    function createCompactTreeLayout(root) {
+      const positions = new Map();
+
+      const nodeSize = window.innerWidth <= 900 ? 48 : 56;
+      const horizontalGap = window.innerWidth <= 900 ? 64 : 76;
+      const verticalGap = window.innerWidth <= 900 ? 78 : 88;
+      const padding = 26;
+
+      let order = 0;
+      let maxDepth = 0;
+
+      function inorder(node, depth) {
+        if (!node) {
+          return;
+        }
+
+        inorder(node.left, depth + 1);
+
+        positions.set(node, {
+          x: padding + order * horizontalGap,
+          y: padding + depth * verticalGap
+        });
+
+        order++;
+        maxDepth = Math.max(maxDepth, depth);
+
+        inorder(node.right, depth + 1);
+      }
+
+      inorder(root, 0);
+
+      const width = Math.max(
+        360,
+        padding * 2 + Math.max(1, order - 1) * horizontalGap + nodeSize
+      );
+
+      const height = padding * 2 + maxDepth * verticalGap + nodeSize;
+
+      return {
+        positions,
+        width,
+        height,
+        nodeSize
+      };
     }
 
     function renderTree() {
       els.treeBox.innerHTML = "";
 
-      const levelsArr = collectLevels(currentLevel().tree);
+      const lv = currentLevel();
+      const layout = createCompactTreeLayout(lv.tree);
+      const edges = collectEdges(lv.tree);
 
-      levelsArr.forEach(level => {
-        const row = document.createElement("div");
-        row.className = "tree-level";
+      const canvas = document.createElement("div");
+      canvas.className = "tree-canvas";
+      canvas.style.width = `${layout.width}px`;
+      canvas.style.height = `${layout.height}px`;
 
-        level.forEach(node => {
-          const div = document.createElement("div");
-          div.className = "tree-node";
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.classList.add("tree-lines");
+      svg.setAttribute("width", layout.width);
+      svg.setAttribute("height", layout.height);
+      svg.setAttribute("viewBox", `0 0 ${layout.width} ${layout.height}`);
 
-          if (!node) {
-            div.textContent = "";
-            div.style.visibility = "hidden";
-          } else if (node === current) {
-            div.textContent = node.value;
-            div.classList.add("current");
-          } else if (visited.has(node)) {
-            div.textContent = node.value;
+      edges.forEach(edge => {
+        const parentPosition = layout.positions.get(edge.parent);
+        const childPosition = layout.positions.get(edge.child);
 
-            if (node.value === currentLevel().target) {
-              div.classList.add("found");
-            } else {
-              div.classList.add("visited");
-            }
-          } else {
-            div.textContent = "?";
-            div.classList.add("hidden");
-          }
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
 
-          row.appendChild(div);
-        });
+        const x1 = parentPosition.x + layout.nodeSize / 2;
+        const y1 = parentPosition.y + layout.nodeSize / 2;
+        const x2 = childPosition.x + layout.nodeSize / 2;
+        const y2 = childPosition.y + layout.nodeSize / 2;
 
-        els.treeBox.appendChild(row);
+        line.setAttribute("x1", x1);
+        line.setAttribute("y1", y1);
+        line.setAttribute("x2", x2);
+        line.setAttribute("y2", y2);
+
+        const parentVisible = visited.has(edge.parent) || edge.parent === current;
+        const childVisible = visited.has(edge.child) || edge.child === current;
+
+        if (parentVisible && childVisible) {
+          line.classList.add("tree-line");
+        } else {
+          line.classList.add("tree-line", "hidden-line");
+        }
+
+        svg.appendChild(line);
       });
+
+      canvas.appendChild(svg);
+
+      layout.positions.forEach((position, node) => {
+        const div = document.createElement("div");
+        div.className = "tree-node";
+        div.style.left = `${position.x}px`;
+        div.style.top = `${position.y}px`;
+
+        if (node === current) {
+          div.textContent = node.value;
+          div.classList.add("current");
+        } else if (visited.has(node)) {
+          div.textContent = node.value;
+
+          if (node.value === lv.target) {
+            div.classList.add("found");
+          } else {
+            div.classList.add("visited");
+          }
+        } else {
+          div.textContent = "?";
+          div.classList.add("hidden");
+        }
+
+        canvas.appendChild(div);
+      });
+
+      els.treeBox.appendChild(canvas);
     }
   </script>
 </body>
