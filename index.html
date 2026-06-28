@@ -54,15 +54,33 @@
 
     .layout {
       display: grid;
-      grid-template-columns: 1.05fr .95fr;
+      grid-template-columns: minmax(360px, 1.05fr) minmax(0, .95fr);
       gap: 18px;
+      align-items: start;
+    }
+
+    .layout > * {
+      min-width: 0;
     }
 
     .panel {
+      min-width: 0;
       background: white;
       border-radius: 18px;
       padding: 18px;
       box-shadow: 0 8px 22px rgba(15, 23, 42, .08);
+    }
+
+    .game-panel {
+      position: sticky;
+      top: 16px;
+      align-self: start;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+    }
+
+    .tree-panel {
+      min-width: 0;
     }
 
     .mission {
@@ -177,14 +195,15 @@
     }
 
     .tree-box {
-      min-height: 360px;
-      overflow-x: auto;
-      overflow-y: hidden;
+      min-height: 320px;
+      max-height: min(520px, calc(100vh - 220px));
+      overflow: auto;
       padding: 14px;
       background: #f8fafc;
       border-radius: 14px;
       border: 1px solid #e2e8f0;
       -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
     }
 
     .tree-canvas {
@@ -460,6 +479,17 @@
         gap: 12px;
       }
 
+      .game-panel {
+        position: static;
+        max-height: none;
+        overflow: visible;
+      }
+
+      .tree-box {
+        max-height: 340px;
+        overflow: auto;
+      }
+
       .topbar {
         grid-template-columns: repeat(2, 1fr);
         gap: 7px;
@@ -537,11 +567,6 @@
         grid-column: 1 / -1;
       }
 
-      .tree-box {
-        min-height: 300px;
-        padding: 8px;
-      }
-
       .tree-node {
         width: 48px;
         height: 48px;
@@ -595,7 +620,7 @@
     </div>
 
     <div class="layout">
-      <div class="panel">
+      <div class="panel game-panel">
         <div class="mission" id="missionBox"></div>
 
         <div class="current-node" id="currentNodeBox">
@@ -632,7 +657,7 @@
       </div>
 
       <div>
-        <div class="panel" style="margin-bottom:18px;">
+        <div class="panel tree-panel" style="margin-bottom:18px;">
           <h2>🌫️ 迷霧樹視覺化</h2>
           <div class="tree-box" id="treeBox"></div>
           <p class="lesson">節點會隨機產生，並用線條連接；未走過的節點仍會用問號隱藏。</p>
@@ -801,7 +826,7 @@
       els.logList.innerHTML = "";
 
       addLog(`開始關卡：目標是 <strong>${lv.target}</strong>，目前在根節點 <strong>${current.value}</strong>。`);
-      addLog(`🎲 本關 BST 已重新隨機產生，因此每次練習都不會完全一樣。`);
+      addLog("🎲 本關 BST 已重新隨機產生，因此每次練習都不會完全一樣。");
 
       setFeedback("請比較目標值和目前節點，再決定往左或往右。", "");
 
