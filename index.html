@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tree Adventure：BST Master 改良版</title>
+  <title>Tree Adventure：BST Master 隨機版</title>
 
   <style>
     * {
@@ -569,8 +569,8 @@
     <div class="start-card">
       <h2>🌳 BST 搜尋挑戰</h2>
       <p>
-        每一關都要依照「左小右大」判斷方向。<br>
-        未走過的節點會被迷霧隱藏，不能直接看答案。<br>
+        每一關都會隨機產生一棵新的 BST。<br>
+        請依照「左小右大」判斷方向。<br>
         走錯會扣 HP，但可以回退後重新判斷。
       </p>
       <button class="success" onclick="startGame()">開始遊戲</button>
@@ -580,14 +580,14 @@
   <div class="confetti-layer" id="confettiLayer"></div>
 
   <div class="container hidden-ui" id="gameContainer">
-    <h1>🌳 Tree Adventure：BST Master 改良版</h1>
+    <h1>🌳 Tree Adventure：BST Master 隨機版</h1>
 
     <div class="subtitle">
-      戰爭迷霧 + 可回退 + 錯誤提示 + 搜尋路徑，讓玩家靠 BST 規則判斷，而不是看答案走路。
+      隨機 BST + 戰爭迷霧 + 可回退 + 錯誤提示 + 搜尋路徑，讓玩家可以重複練習而不是背答案。
     </div>
 
     <div class="topbar">
-      <div class="stat">關卡：<span id="levelText">1</span>/5</div>
+      <div class="stat">關卡：<span id="levelText">1</span>/<span id="totalLevelText">5</span></div>
       <div class="stat">❤️ HP：<span id="hpText">100</span></div>
       <div class="stat">🪙 金幣：<span id="coinText">0</span></div>
       <div class="stat">⭐ 分數：<span id="scoreText">0</span></div>
@@ -635,7 +635,7 @@
         <div class="panel" style="margin-bottom:18px;">
           <h2>🌫️ 迷霧樹視覺化</h2>
           <div class="tree-box" id="treeBox"></div>
-          <p class="lesson">節點已改成線條連接，未走過的節點仍會用問號隱藏。</p>
+          <p class="lesson">節點會隨機產生，並用線條連接；未走過的節點仍會用問號隱藏。</p>
         </div>
 
         <div class="panel">
@@ -657,116 +657,52 @@
   </div>
 
   <script>
-    const levels = [
+    const levelConfigs = [
       {
         name: "第一關：理解左小右大",
-        target: 20,
-        tree: {
-          value: 50,
-          left: {
-            value: 30,
-            left: { value: 20 },
-            right: { value: 40 }
-          },
-          right: {
-            value: 70,
-            left: { value: 60 },
-            right: { value: 80 }
-          }
-        },
-        goal: "請找到 20。這關只要練習：目標比目前節點小，就往左。"
+        nodeCount: 7,
+        min: 10,
+        max: 90,
+        targetMode: "exists",
+        goal: "請找到目標值。這關主要練習：目標比目前節點小就往左，比目前節點大就往右。"
       },
       {
         name: "第二關：連續判斷路徑",
-        target: 65,
-        tree: {
-          value: 50,
-          left: {
-            value: 25,
-            left: { value: 10 },
-            right: { value: 35 }
-          },
-          right: {
-            value: 75,
-            left: {
-              value: 60,
-              right: { value: 65 }
-            },
-            right: { value: 90 }
-          }
-        },
-        goal: "請找到 65。這關需要連續比較多次。"
+        nodeCount: 9,
+        min: 5,
+        max: 99,
+        targetMode: "exists",
+        goal: "請找到目標值。這關會有更多節點，需要連續比較多次。"
       },
       {
-        name: "第三關：避免看答案，靠規則判斷",
-        target: 42,
-        tree: {
-          value: 40,
-          left: {
-            value: 20,
-            left: { value: 10 },
-            right: { value: 30 }
-          },
-          right: {
-            value: 60,
-            left: {
-              value: 50,
-              left: { value: 42 }
-            },
-            right: { value: 80 }
-          }
-        },
-        goal: "請找到 42。每一步都要說服自己：為什麼往左或往右。"
+        name: "第三關：避免背答案，靠規則判斷",
+        nodeCount: 11,
+        min: 10,
+        max: 120,
+        targetMode: "deepExists",
+        goal: "請找到目標值。目標通常會在比較深的位置，要一步一步用 BST 規則判斷。"
       },
       {
         name: "第四關：搜尋失敗也能學到東西",
-        target: 55,
-        tree: {
-          value: 45,
-          left: {
-            value: 25,
-            left: { value: 15 },
-            right: { value: 35 }
-          },
-          right: {
-            value: 70,
-            left: {
-              value: 60,
-              left: { value: 52 }
-            },
-            right: { value: 88 }
-          }
-        },
-        goal: "請搜尋 55。這個值不一定存在，重點是找到它應該出現的位置。"
+        nodeCount: 9,
+        min: 10,
+        max: 100,
+        targetMode: "missing",
+        goal: "請搜尋目標值。這個值不一定存在，重點是找到它應該出現的位置。"
       },
       {
-        name: "第五關：挑戰較深的 BST",
-        target: 73,
-        tree: {
-          value: 64,
-          left: {
-            value: 32,
-            left: { value: 16 },
-            right: { value: 48 }
-          },
-          right: {
-            value: 96,
-            left: {
-              value: 80,
-              left: {
-                value: 72,
-                right: { value: 73 }
-              },
-              right: { value: 88 }
-            },
-            right: { value: 112 }
-          }
-        },
-        goal: "請找到 73。觀察搜尋路徑長度，理解 BST 的效率。"
+        name: "第五關：挑戰較大的 BST",
+        nodeCount: 13,
+        min: 1,
+        max: 150,
+        targetMode: "deepExists",
+        goal: "請找到目標值。觀察搜尋路徑長度，理解 BST 搜尋效率。"
       }
     ];
 
     let levelIndex = 0;
+    let activeLevel = null;
+
     let current = null;
     let path = [];
     let visited = new Set();
@@ -784,6 +720,7 @@
 
     window.addEventListener("DOMContentLoaded", () => {
       cacheElements();
+      els.totalLevelText.textContent = levelConfigs.length;
     });
 
     function cacheElements() {
@@ -796,6 +733,7 @@
         "nextBtn",
         "feedback",
         "levelText",
+        "totalLevelText",
         "hpText",
         "coinText",
         "scoreText",
@@ -816,7 +754,7 @@
     }
 
     function currentLevel() {
-      return levels[levelIndex];
+      return activeLevel;
     }
 
     function startGame() {
@@ -834,6 +772,8 @@
     }
 
     function initLevel(resetHp = false) {
+      activeLevel = generateLevel(levelIndex);
+
       const lv = currentLevel();
 
       current = lv.tree;
@@ -852,6 +792,8 @@
 
       els.missionBox.innerHTML = `
         <strong>${lv.name}</strong><br>
+        🎲 本關數字：隨機產生<br>
+        🌳 節點數量：<strong>${lv.nodeCount}</strong><br>
         🎯 目標值：<strong>${lv.target}</strong><br>
         ${lv.goal}
       `;
@@ -859,10 +801,129 @@
       els.logList.innerHTML = "";
 
       addLog(`開始關卡：目標是 <strong>${lv.target}</strong>，目前在根節點 <strong>${current.value}</strong>。`);
+      addLog(`🎲 本關 BST 已重新隨機產生，因此每次練習都不會完全一樣。`);
 
       setFeedback("請比較目標值和目前節點，再決定往左或往右。", "");
 
       render();
+    }
+
+    function generateLevel(index) {
+      const config = levelConfigs[index];
+
+      const values = generateUniqueNumbers(config.nodeCount, config.min, config.max);
+      values.sort((a, b) => a - b);
+
+      const tree = buildBalancedBST(values);
+
+      let target;
+
+      if (config.targetMode === "missing") {
+        target = pickMissingTarget(values, config.min, config.max);
+      } else if (config.targetMode === "deepExists") {
+        target = pickDeepExistingTarget(tree);
+      } else {
+        target = pickExistingTarget(values, tree.value);
+      }
+
+      return {
+        name: config.name,
+        nodeCount: config.nodeCount,
+        min: config.min,
+        max: config.max,
+        targetMode: config.targetMode,
+        goal: config.goal,
+        values,
+        tree,
+        target
+      };
+    }
+
+    function generateUniqueNumbers(count, min, max) {
+      const range = max - min + 1;
+
+      if (count > range) {
+        throw new Error("節點數量不能大於可產生的數字範圍。");
+      }
+
+      const set = new Set();
+
+      while (set.size < count) {
+        set.add(randomInt(min, max));
+      }
+
+      return Array.from(set);
+    }
+
+    function buildBalancedBST(sortedValues) {
+      if (sortedValues.length === 0) {
+        return null;
+      }
+
+      const mid = Math.floor(sortedValues.length / 2);
+
+      return {
+        value: sortedValues[mid],
+        left: buildBalancedBST(sortedValues.slice(0, mid)),
+        right: buildBalancedBST(sortedValues.slice(mid + 1))
+      };
+    }
+
+    function pickExistingTarget(values, rootValue) {
+      const candidates = values.filter(value => value !== rootValue);
+
+      if (candidates.length === 0) {
+        return values[0];
+      }
+
+      return candidates[randomInt(0, candidates.length - 1)];
+    }
+
+    function pickDeepExistingTarget(tree) {
+      const leaves = collectLeaves(tree);
+
+      if (leaves.length === 0) {
+        return tree.value;
+      }
+
+      return leaves[randomInt(0, leaves.length - 1)].value;
+    }
+
+    function collectLeaves(node, leaves = []) {
+      if (!node) {
+        return leaves;
+      }
+
+      if (!node.left && !node.right) {
+        leaves.push(node);
+        return leaves;
+      }
+
+      collectLeaves(node.left, leaves);
+      collectLeaves(node.right, leaves);
+
+      return leaves;
+    }
+
+    function pickMissingTarget(values, min, max) {
+      const used = new Set(values);
+      const candidates = [];
+
+      for (let value = min; value <= max; value++) {
+        if (!used.has(value)) {
+          candidates.push(value);
+        }
+      }
+
+      if (candidates.length === 0) {
+        return max + 1;
+      }
+
+      return candidates[randomInt(0, candidates.length - 1)];
+    }
+
+    function randomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
     function getCorrectDirection(target, nodeValue) {
@@ -1054,13 +1115,13 @@
     }
 
     function showNextButton() {
-      if (levelIndex < levels.length - 1) {
+      if (levelIndex < levelConfigs.length - 1) {
         els.nextBtn.textContent = "進入下一關";
       } else {
         els.nextBtn.textContent = "重新開始全部關卡";
 
         setFeedback(
-          `🏆 全部關卡完成！最後分數：${score}，金幣：${coins}。`,
+          `🏆 全部關卡完成！最後分數：${score}，金幣：${coins}。按下「重新開始全部關卡」後，所有關卡都會重新產生新的數字。`,
           "finish"
         );
       }
@@ -1097,7 +1158,7 @@
     function nextLevel() {
       els.confettiLayer.innerHTML = "";
 
-      if (levelIndex < levels.length - 1) {
+      if (levelIndex < levelConfigs.length - 1) {
         levelIndex++;
         initLevel(false);
       } else {
