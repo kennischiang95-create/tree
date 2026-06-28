@@ -90,6 +90,13 @@
       color: #1d4ed8;
     }
 
+    #ruleHint {
+      margin-top: 8px;
+      font-weight: bold;
+      color: #334155;
+      line-height: 1.6;
+    }
+
     .choices {
       display: flex;
       gap: 10px;
@@ -180,6 +187,7 @@
       stroke: #94a3b8;
       stroke-width: 3;
       stroke-linecap: round;
+      transition: stroke 0.2s ease;
     }
 
     .tree-line.hidden-line {
@@ -201,6 +209,13 @@
       color: #334155;
       box-shadow: 0 8px 14px rgba(15, 23, 42, .12);
       z-index: 2;
+
+      transition:
+        transform 0.2s ease,
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        box-shadow 0.2s ease;
     }
 
     .tree-node.hidden {
@@ -221,12 +236,39 @@
       border-color: #f59e0b;
       color: #92400e;
       transform: scale(1.08);
+      box-shadow: 0 10px 18px rgba(245, 158, 11, .25);
     }
 
     .tree-node.found {
       background: #bbf7d0;
       border-color: #059669;
       color: #065f46;
+    }
+
+    .tree-node.shake {
+      animation: shake 0.28s ease;
+    }
+
+    @keyframes shake {
+      0% {
+        transform: translateX(0) scale(1.08);
+      }
+
+      25% {
+        transform: translateX(-6px) scale(1.08);
+      }
+
+      50% {
+        transform: translateX(6px) scale(1.08);
+      }
+
+      75% {
+        transform: translateX(-4px) scale(1.08);
+      }
+
+      100% {
+        transform: translateX(0) scale(1.08);
+      }
     }
 
     .path {
@@ -668,11 +710,16 @@
     let current = null;
     let path = [];
     let visited = new Set();
+
     let hp = 100;
     let coins = 0;
     let score = 0;
+
     let finished = false;
     let gameStarted = false;
+
+    // 控制走錯時，目前節點是否要震動
+    let shouldShakeCurrentNode = false;
 
     const els = {};
 
@@ -695,6 +742,7 @@
         "scoreText",
         "progressText",
         "currentNodeText",
+        "ruleHint",
         "pathText",
         "compareText",
         "backBtn",
@@ -729,8 +777,12 @@
 
       current = lv.tree;
       path = [current];
+
+      // 直接存節點物件，避免未來如果有重複數值時發生誤判
       visited = new Set([current]);
+
       finished = false;
+      shouldShakeCurrentNode = false;
 
       els.nextRow.classList.remove("show");
 
@@ -798,6 +850,8 @@
 
       hp = Math.max(0, hp - 10);
 
+      shouldShakeCurrentNode = true;
+
       setFeedback(
         `走錯了：${target} ${target < current.value ? "小於" : "大於"} ${current.value}，所以應該往${correctDirection === "left" ? "左" : "右"}。你可以按「回退一步」重新判斷。`,
         "bad"
@@ -819,6 +873,7 @@
       const target = currentLevel().target;
 
       finished = true;
+      shouldShakeCurrentNode = false;
 
       setFeedback(
         `搜尋結束：${target} 應該出現在 ${current.value} 的${direction === "left" ? "左" : "右"}邊，但該位置是空的，所以樹中沒有這個值。`,
@@ -838,6 +893,8 @@
     function moveToNextNode(direction, next) {
       const target = currentLevel().target;
       const previous = current;
+
+      shouldShakeCurrentNode = false;
 
       current = next;
       path.push(current);
@@ -869,6 +926,8 @@
         return;
       }
 
+      shouldShakeCurrentNode = false;
+
       const removed = path.pop();
 
       current = path[path.length - 1];
@@ -888,6 +947,7 @@
 
       const target = currentLevel().target;
 
+      // 提示維持免費，因為這是學習網站，不是懲罰型遊戲
       if (target === current.value) {
         setFeedback(`目標值就是目前節點 ${current.value}，已經找到了。`, "good");
       } else if (target < current.value) {
@@ -899,11 +959,13 @@
 
     function completeLevel() {
       finished = true;
+      shouldShakeCurrentNode = false;
 
       const bonus = Math.max(10, 40 - (path.length - 1) * 3);
 
       score += bonus;
       coins += 10;
+
       visited.add(current);
 
       setFeedback(
@@ -954,6 +1016,8 @@
     }
 
     function restartLevel() {
+      shouldShakeCurrentNode = false;
+
       if (hp <= 0) {
         hp = 100;
       }
@@ -988,7 +1052,25 @@
       els.compareText.textContent = path.length;
       els.backBtn.disabled = path.length <= 1 || finished;
 
+      updateRuleHint();
       renderTree();
+    }
+
+    function updateRuleHint() {
+      if (!current) {
+        els.ruleHint.textContent = "請根據目標值判斷要往左或往右。";
+        return;
+      }
+
+      const target = currentLevel().target;
+
+      if (target < current.value) {
+        els.ruleHint.textContent = `${target} 小於 ${current.value}，所以依照 BST 規則應該往左。`;
+      } else if (target > current.value) {
+        els.ruleHint.textContent = `${target} 大於 ${current.value}，所以依照 BST 規則應該往右。`;
+      } else {
+        els.ruleHint.textContent = `${target} 等於目前節點 ${current.value}，已經找到目標值。`;
+      }
     }
 
     function estimateHeight(node) {
@@ -1131,6 +1213,10 @@
         if (node === current) {
           div.textContent = node.value;
           div.classList.add("current");
+
+          if (shouldShakeCurrentNode) {
+            div.classList.add("shake");
+          }
         } else if (visited.has(node)) {
           div.textContent = node.value;
 
@@ -1148,6 +1234,9 @@
       });
 
       els.treeBox.appendChild(canvas);
+
+      // 震動只在走錯那次發生，渲染完後關閉旗標
+      shouldShakeCurrentNode = false;
     }
   </script>
 </body>
