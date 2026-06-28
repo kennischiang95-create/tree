@@ -82,6 +82,23 @@
       border: 2px solid #93c5fd;
       border-radius: 18px;
       margin-bottom: 14px;
+      transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .current-node.wrong-shake-card {
+      animation: wrongCardShake 0.55s ease;
+      border-color: #ef4444;
+      background: #fef2f2;
+    }
+
+    @keyframes wrongCardShake {
+      0% { transform: translateX(0); }
+      15% { transform: translateX(-12px); }
+      30% { transform: translateX(12px); }
+      45% { transform: translateX(-10px); }
+      60% { transform: translateX(10px); }
+      75% { transform: translateX(-6px); }
+      100% { transform: translateX(0); }
     }
 
     .node-value {
@@ -245,30 +262,22 @@
       color: #065f46;
     }
 
-    .tree-node.shake {
-      animation: shake 0.28s ease;
+    .tree-node.wrong-shake-node {
+      animation: wrongNodeShake 0.65s ease;
+      border-color: #ef4444;
+      background: #fee2e2;
+      color: #991b1b;
     }
 
-    @keyframes shake {
-      0% {
-        transform: translateX(0) scale(1.08);
-      }
-
-      25% {
-        transform: translateX(-6px) scale(1.08);
-      }
-
-      50% {
-        transform: translateX(6px) scale(1.08);
-      }
-
-      75% {
-        transform: translateX(-4px) scale(1.08);
-      }
-
-      100% {
-        transform: translateX(0) scale(1.08);
-      }
+    @keyframes wrongNodeShake {
+      0% { transform: translateX(0) rotate(0deg) scale(1.12); }
+      12% { transform: translateX(-16px) rotate(-7deg) scale(1.16); }
+      24% { transform: translateX(16px) rotate(7deg) scale(1.16); }
+      36% { transform: translateX(-14px) rotate(-6deg) scale(1.16); }
+      48% { transform: translateX(14px) rotate(6deg) scale(1.16); }
+      60% { transform: translateX(-9px) rotate(-4deg) scale(1.14); }
+      75% { transform: translateX(9px) rotate(4deg) scale(1.12); }
+      100% { transform: translateX(0) rotate(0deg) scale(1.08); }
     }
 
     .path {
@@ -388,6 +397,123 @@
       min-width: 180px;
     }
 
+    .complete-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 9000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(15, 23, 42, .55);
+      backdrop-filter: blur(4px);
+    }
+
+    .complete-modal.show {
+      display: flex;
+    }
+
+    .complete-card {
+      position: relative;
+      width: min(520px, 100%);
+      background: white;
+      border-radius: 24px;
+      padding: 28px 24px;
+      text-align: center;
+      box-shadow: 0 26px 70px rgba(0, 0, 0, .32);
+      animation: popIn 0.32s ease;
+      overflow: hidden;
+    }
+
+    @keyframes popIn {
+      0% {
+        transform: scale(.82) translateY(20px);
+        opacity: 0;
+      }
+
+      100% {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .complete-icon {
+      font-size: 58px;
+      margin-bottom: 8px;
+      animation: bounceIcon 0.75s ease;
+    }
+
+    @keyframes bounceIcon {
+      0% { transform: scale(.7); }
+      45% { transform: scale(1.25); }
+      70% { transform: scale(.95); }
+      100% { transform: scale(1); }
+    }
+
+    .complete-card h2 {
+      margin: 6px 0 10px;
+      font-size: 30px;
+      color: #0f172a;
+    }
+
+    .complete-card p {
+      line-height: 1.8;
+      color: #475569;
+      margin: 0 0 16px;
+    }
+
+    .complete-reward {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .reward-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 12px;
+      font-weight: bold;
+      color: #334155;
+    }
+
+    .complete-card button {
+      width: 100%;
+      min-height: 52px;
+      font-size: 18px;
+      margin-top: 8px;
+    }
+
+    .confetti-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 8999;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .confetti {
+      position: absolute;
+      top: -16px;
+      width: 10px;
+      height: 16px;
+      border-radius: 3px;
+      animation: confettiFall 1.35s ease-out forwards;
+    }
+
+    @keyframes confettiFall {
+      0% {
+        transform: translateY(-20px) rotate(0deg);
+        opacity: 1;
+      }
+
+      100% {
+        transform: translateY(110vh) rotate(540deg);
+        opacity: 0;
+      }
+    }
+
     @media (max-width: 900px) {
       body {
         padding-bottom: 126px;
@@ -502,6 +628,14 @@
       .start-card h2 {
         font-size: 25px;
       }
+
+      .complete-card h2 {
+        font-size: 24px;
+      }
+
+      .complete-icon {
+        font-size: 48px;
+      }
     }
   </style>
 </head>
@@ -518,6 +652,23 @@
       <button class="success" onclick="startGame()">開始遊戲</button>
     </div>
   </div>
+
+  <div class="complete-modal" id="completeModal" aria-hidden="true">
+    <div class="complete-card">
+      <div class="complete-icon" id="completeIcon">🎉</div>
+      <h2 id="completeTitle">完成關卡！</h2>
+      <p id="completeMessage">你完成了這一關。</p>
+
+      <div class="complete-reward">
+        <div class="reward-box">⭐ 分數：<span id="modalScoreText">0</span></div>
+        <div class="reward-box">🪙 金幣：<span id="modalCoinText">0</span></div>
+      </div>
+
+      <button class="success" onclick="nextLevel()" id="modalNextBtn">進入下一關</button>
+    </div>
+  </div>
+
+  <div class="confetti-layer" id="confettiLayer"></div>
 
   <div class="container hidden-ui" id="gameContainer">
     <h1>🌳 Tree Adventure：BST Master 改良版</h1>
@@ -538,7 +689,7 @@
       <div class="panel">
         <div class="mission" id="missionBox"></div>
 
-        <div class="current-node">
+        <div class="current-node" id="currentNodeBox">
           <div>目前所在節點</div>
           <div class="node-value" id="currentNodeText">?</div>
           <div id="ruleHint">請根據目標值判斷要往左或往右。</div>
@@ -718,7 +869,6 @@
     let finished = false;
     let gameStarted = false;
 
-    // 控制走錯時，目前節點是否要震動
     let shouldShakeCurrentNode = false;
 
     const els = {};
@@ -742,11 +892,20 @@
         "scoreText",
         "progressText",
         "currentNodeText",
+        "currentNodeBox",
         "ruleHint",
         "pathText",
         "compareText",
         "backBtn",
-        "treeBox"
+        "treeBox",
+        "completeModal",
+        "completeIcon",
+        "completeTitle",
+        "completeMessage",
+        "modalScoreText",
+        "modalCoinText",
+        "modalNextBtn",
+        "confettiLayer"
       ];
 
       ids.forEach(id => {
@@ -777,13 +936,12 @@
 
       current = lv.tree;
       path = [current];
-
-      // 直接存節點物件，避免未來如果有重複數值時發生誤判
       visited = new Set([current]);
 
       finished = false;
       shouldShakeCurrentNode = false;
 
+      hideCompletionModal();
       els.nextRow.classList.remove("show");
 
       if (resetHp) {
@@ -850,7 +1008,7 @@
 
       hp = Math.max(0, hp - 10);
 
-      shouldShakeCurrentNode = true;
+      triggerWrongAnimation();
 
       setFeedback(
         `走錯了：${target} ${target < current.value ? "小於" : "大於"} ${current.value}，所以應該往${correctDirection === "left" ? "左" : "右"}。你可以按「回退一步」重新判斷。`,
@@ -867,6 +1025,20 @@
       }
 
       render();
+    }
+
+    function triggerWrongAnimation() {
+      shouldShakeCurrentNode = true;
+
+      els.currentNodeBox.classList.remove("wrong-shake-card");
+
+      void els.currentNodeBox.offsetWidth;
+
+      els.currentNodeBox.classList.add("wrong-shake-card");
+
+      setTimeout(() => {
+        els.currentNodeBox.classList.remove("wrong-shake-card");
+      }, 650);
     }
 
     function handleEmptyNode(direction) {
@@ -887,7 +1059,7 @@
 
       render();
 
-      showNextButton();
+      showNextButton("搜尋完成！", `你找到了 ${target} 應該出現的位置。這代表它目前不在這棵 BST 裡。`, "🔎");
     }
 
     function moveToNextNode(direction, next) {
@@ -947,7 +1119,6 @@
 
       const target = currentLevel().target;
 
-      // 提示維持免費，因為這是學習網站，不是懲罰型遊戲
       if (target === current.value) {
         setFeedback(`目標值就是目前節點 ${current.value}，已經找到了。`, "good");
       } else if (target < current.value) {
@@ -979,25 +1150,73 @@
 
       render();
 
-      showNextButton();
+      showNextButton(
+        levelIndex < levels.length - 1 ? "成功找到目標！" : "全部關卡完成！",
+        levelIndex < levels.length - 1
+          ? `搜尋路徑：${path.map(node => node.value).join(" → ")}，共比較 ${path.length} 次。`
+          : `你已完成全部 BST 搜尋挑戰。最後分數是 ${score}，金幣是 ${coins}。`,
+        levelIndex < levels.length - 1 ? "🎉" : "🏆"
+      );
     }
 
-    function showNextButton() {
+    function showNextButton(title, message, icon) {
       if (levelIndex < levels.length - 1) {
         els.nextBtn.textContent = "進入下一關";
+        els.modalNextBtn.textContent = "進入下一關";
       } else {
         els.nextBtn.textContent = "重新開始全部關卡";
-
-        setFeedback(
-          `🏆 全部關卡完成！最後分數：${score}，金幣：${coins}。`,
-          "finish"
-        );
+        els.modalNextBtn.textContent = "重新開始全部關卡";
       }
 
       els.nextRow.classList.add("show");
+
+      showCompletionModal(title, message, icon);
+    }
+
+    function showCompletionModal(title, message, icon) {
+      els.completeIcon.textContent = icon;
+      els.completeTitle.textContent = title;
+      els.completeMessage.textContent = message;
+      els.modalScoreText.textContent = score;
+      els.modalCoinText.textContent = coins;
+
+      els.completeModal.classList.add("show");
+      els.completeModal.setAttribute("aria-hidden", "false");
+
+      playConfetti();
+    }
+
+    function hideCompletionModal() {
+      els.completeModal.classList.remove("show");
+      els.completeModal.setAttribute("aria-hidden", "true");
+      els.confettiLayer.innerHTML = "";
+    }
+
+    function playConfetti() {
+      els.confettiLayer.innerHTML = "";
+
+      const colors = ["#f59e0b", "#10b981", "#3b82f6", "#ef4444", "#a855f7"];
+
+      for (let i = 0; i < 42; i++) {
+        const piece = document.createElement("div");
+        piece.className = "confetti";
+        piece.style.left = `${Math.random() * 100}%`;
+        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.animationDelay = `${Math.random() * 0.35}s`;
+        piece.style.animationDuration = `${1 + Math.random() * 0.8}s`;
+        piece.style.transform = `rotate(${Math.random() * 180}deg)`;
+
+        els.confettiLayer.appendChild(piece);
+      }
+
+      setTimeout(() => {
+        els.confettiLayer.innerHTML = "";
+      }, 2200);
     }
 
     function nextLevel() {
+      hideCompletionModal();
+
       if (levelIndex < levels.length - 1) {
         levelIndex++;
         initLevel(false);
@@ -1017,6 +1236,8 @@
 
     function restartLevel() {
       shouldShakeCurrentNode = false;
+
+      hideCompletionModal();
 
       if (hp <= 0) {
         hp = 100;
@@ -1215,7 +1436,7 @@
           div.classList.add("current");
 
           if (shouldShakeCurrentNode) {
-            div.classList.add("shake");
+            div.classList.add("wrong-shake-node");
           }
         } else if (visited.has(node)) {
           div.textContent = node.value;
@@ -1235,7 +1456,6 @@
 
       els.treeBox.appendChild(canvas);
 
-      // 震動只在走錯那次發生，渲染完後關閉旗標
       shouldShakeCurrentNode = false;
     }
   </script>
